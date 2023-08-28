@@ -1,17 +1,16 @@
 from django.contrib.auth.hashers import make_password
 from rest_framework.exceptions import ValidationError
-from rest_framework.fields import CharField
+from rest_framework.fields import CharField, HiddenField, CurrentUserDefault
+from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import ModelSerializer
 
 from users.models import UserModel
 
 
 class UserModelSerializer(ModelSerializer):
-    confirm_password = CharField(read_only=True, max_length=255)
-
     class Meta:
         model = UserModel
-        fields = ['first_name', 'last_name', 'password', 'username', 'email', 'bio', 'confirm_password']
+        fields = ['first_name', 'last_name', 'password', 'username', 'email', 'bio']
 
     def create(self, validated_data):
         password = validated_data['password']
@@ -33,11 +32,55 @@ class UserModelSerializer(ModelSerializer):
         return instance
 
 
+
+class UserViewProfileModelSerializer(ModelSerializer):
+    class Meta:
+        model = UserModel
+        fields = ('id', 'first_name', 'username', 'image')
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context['request']
+        data['is_followed'] = False
+        if request and (user := getattr(request, 'user')) and user.is_authenticated:
+            data['is_followed'] = user.following.filter(id=instance.id).exists()
+        return data
+
+
 class UserFollowModelSerializer(ModelSerializer):
-    pass
+    followers = UserViewProfileModelSerializer(many=True)
+    following = UserViewProfileModelSerializer(many=True)
+
+    class Meta:
+        model = UserModel
+        fields = ('following', 'followers')
 
 
 class UserFollowingModelSerializer(ModelSerializer):
-    pass
+    user = HiddenField(default=CurrentUserDefault())
+    follow_user_id = PrimaryKeyRelatedField(queryset=UserModel.objects.all())
+
+    class Meta:
+        model = UserModel
+        fields = ('follow_user_id', 'user')
+
+    def create(self, validated_data):
+        user: UserModel = validated_data['user']
+        follow_user = validated_data['follow_user_id']
+        if user.following.filter(id=follow_user.id).first():
+            user.following.remove(follow_user)
+            follow_user.followers.remove(user)
+            follow_user.save()
+            user.save()
+        else:
+            user.following.add(follow_user)
+            user.save()
+            follow_user.followers.add(user)
+            follow_user.save()
+        return user
+
+    def to_representation(self, instance):
+        return {'message': "you've followed successfully"}
+
 
 
