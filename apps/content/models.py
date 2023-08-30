@@ -11,7 +11,7 @@ class Post(BaseModel):
     author = models.ForeignKey('users.UserModel', on_delete=models.CASCADE)
     media = models.ManyToManyField('content.Media', related_name='medias')
     location = models.CharField(max_length=255, null=True, blank=True)
-    likes = models.ManyToManyField('content.CommentLike', related_name='posts')
+    likes = models.ManyToManyField('content.Like', related_name='posts')
     comments = models.ManyToManyField('content.CommentPost', related_name='posts')
 
     def __str__(self):
@@ -29,7 +29,7 @@ class Post(BaseModel):
 class Reel(BaseModel):
     id = models.CharField(primary_key=True, default=unique_id, max_length=36)
     caption = models.TextField(null=True, blank=True)
-    author = models.ForeignKey('users.UserProfile', on_delete=models.CASCADE)
+    author = models.ForeignKey('users.UserModel', on_delete=models.CASCADE)
     media = models.FileField(upload_to='reels/', validators=[CustomFileExtensionValidator(['mp4', 'avi', 'mkv'])])
     location = models.CharField(max_length=255, null=True, blank=True)
     likes = models.ManyToManyField('content.Like', related_name='reels')
