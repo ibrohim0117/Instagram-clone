@@ -1,5 +1,4 @@
 from collections import OrderedDict
-
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import CharField, ListField, SkipField
 from rest_framework.relations import PKOnlyObject
@@ -14,7 +13,7 @@ class PostModelSerializer(ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['__all__']
+        fields = '__all__'
         read_only_fields = ('created_at', 'updated_at', 'likes', 'comments', 'id')
 
     def create(self, validated_data):
@@ -49,12 +48,13 @@ class PostModelSerializer(ModelSerializer):
 
 
 class UpdatePostModelSerializer(ModelSerializer):
-    model = Post
-    fields = ['caption', 'location']
-    read_only_fields = ('created_at', 'updated_at', 'likes', 'comments', 'id')
+    class Meta:
+        model = Post
+        fields = 'caption', 'location'
+        read_only_fields = ('created_at', 'updated_at', 'likes', 'comments', 'id')
 
     def to_representation(self, instance):
-        return super().to_representation(instance)
+        return PostModelSerializer(instance).data
 
 
 

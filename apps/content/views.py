@@ -1,7 +1,10 @@
-from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from drf_yasg import openapi, utils
+from rest_framework.parsers import MultiPartParser
 from rest_framework.viewsets import ModelViewSet
+
+from content.models import Post
+from content.serializer import PostModelSerializer, UpdatePostModelSerializer
 
 
 @method_decorator(name='create', decorator=utils.swagger_auto_schema(manual_parameters=[openapi.Parameter(
@@ -13,9 +16,20 @@ from rest_framework.viewsets import ModelViewSet
     description='media'
 )]))
 
+class PostModelSetView(ModelViewSet):    # noqa
+    serializer_class = PostModelSerializer
+    queryset = Post.objects.all()
+    parser_classes = (MultiPartParser, )
+    http_method_names = ('get', 'post', 'patch', 'delete')
 
-class PostModelSetView(ModelViewSet):
-    pass
+    def get_serializer_class(self):
+        if self.action == 'partial_update':
+            return UpdatePostModelSerializer
+        return super().get_serializer_class()
+
+
+
+
 
 
 
