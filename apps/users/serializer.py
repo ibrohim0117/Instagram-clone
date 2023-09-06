@@ -32,7 +32,6 @@ class UserModelSerializer(ModelSerializer):
         return instance
 
 
-
 class UserViewProfileModelSerializer(ModelSerializer):
     class Meta:
         model = UserModel
